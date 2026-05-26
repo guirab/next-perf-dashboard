@@ -1,6 +1,8 @@
 import { runPageSpeed } from '@/lib/pagespeed'
 import type { Strategy } from '@/types/metrics'
 
+export const maxDuration = 60
+
 export async function POST(request: Request) {
   let body: unknown
   try {
