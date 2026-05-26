@@ -15,6 +15,12 @@ A real-time web performance analyzer powered by Google PageSpeed Insights. Paste
 - **Smart cache** — results are reused for 10 minutes; older entries are re-fetched automatically
 - **Error handling** — friendly messages for rate limits, crawler blocks, and timeouts
 
+## Known Limitations
+
+- Analysis takes **20–50 seconds** — the PageSpeed API runs a real Lighthouse audit on Google's servers
+- Some sites block Google's crawler and will always return an error (e.g. YouTube)
+- The free API tier is rate-limited per IP; an API key is strongly recommended for production use
+
 ## Tech Stack
 
 | Layer | Technology |
@@ -48,6 +54,29 @@ PAGESPEED_API_KEY=your_key_here
 ```
 
 The key is only used server-side and is never exposed to the browser.
+
+## Testing
+
+The project uses [Vitest](https://vitest.dev) with Testing Library for unit and component tests.
+
+```bash
+npm test           # run all tests once
+npm run test:watch # watch mode
+npm run test:ui    # browser UI
+```
+
+**Coverage:**
+- `lib/metrics.ts` — `getRating`, `formatMetricValue`, color helpers
+- `lib/pagespeed.ts` — response parsing, error handling (429, 500, absent audits)
+- `app/api/analyze/route.ts` — URL validation, strategy defaulting, error propagation
+- `components/UrlInput.tsx` — URL normalization, validation messages
+- `store/useHistoryStore.ts` — add, cap at 20, clear, id uniqueness
+
+## Deploying
+
+The easiest way to deploy is via [Vercel](https://vercel.com). Connect the GitHub repository and Vercel will build and deploy every push automatically.
+
+Remember to add `PAGESPEED_API_KEY` in **Settings → Environment Variables** on Vercel, otherwise production requests will hit the anonymous rate limit.
 
 ## Project Structure
 
