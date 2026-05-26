@@ -34,7 +34,7 @@ export async function runPageSpeed(url: string, strategy: Strategy): Promise<Ana
 
   const res = await fetch(`${PAGESPEED_API}?${params}`, {
     headers: { 'User-Agent': 'next-perf-dashboard/1.0' },
-    signal: AbortSignal.timeout(30000),
+    signal: AbortSignal.timeout(55000),
   })
   if (!res.ok) {
     const body = await res.text().catch(() => '')
