@@ -1,36 +1,80 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Perf Dashboard
 
-## Getting Started
+A real-time web performance analyzer powered by Google PageSpeed Insights. Paste any URL and get a full breakdown of Core Web Vitals, performance score, and analysis history — in seconds.
 
-First, run the development server:
+**Live demo:** https://next-perf-dashboard.vercel.app
+
+---
+
+## Features
+
+- **Core Web Vitals** — LCP, FCP, CLS, INP, TTFB with value, rating, and reference thresholds
+- **Performance score** — 0–100 radial chart with color coding (green / yellow / red)
+- **Mobile vs Desktop** — switch strategies before running the analysis
+- **Analysis history** — last 20 results persisted in localStorage via Zustand
+- **Smart cache** — results are reused for 10 minutes; older entries are re-fetched automatically
+- **Error handling** — friendly messages for rate limits, crawler blocks, and timeouts
+
+## Tech Stack
+
+| Layer | Technology |
+|---|---|
+| Framework | Next.js 16 (App Router) |
+| Language | TypeScript |
+| Styling | Tailwind CSS v4 |
+| Components | shadcn/ui |
+| Data fetching | React Query (`useMutation`) |
+| State / persistence | Zustand with `persist` middleware |
+| Charts | Recharts |
+| API | Google PageSpeed Insights v5 |
+
+## Running Locally
 
 ```bash
+git clone https://github.com/guirab/next-perf-dashboard.git
+cd next-perf-dashboard
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open http://localhost:3000 in your browser.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### API Key (optional but recommended)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Without a key the PageSpeed API is rate-limited per IP. To increase the quota, create a free key in [Google Cloud Console](https://console.cloud.google.com), enable the **PageSpeed Insights API**, and add it to a `.env.local` file at the project root:
 
-## Learn More
+```
+PAGESPEED_API_KEY=your_key_here
+```
 
-To learn more about Next.js, take a look at the following resources:
+The key is only used server-side and is never exposed to the browser.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Project Structure
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```
+app/
+  api/analyze/route.ts   # POST handler — validates URL, calls PageSpeed API
+  layout.tsx             # Root layout with providers and font
+  page.tsx               # Main page
+components/
+  AnalysisProgress.tsx   # Animated progress bar shown during analysis
+  CompareToggle.tsx      # Mobile / Desktop strategy toggle
+  HistoryList.tsx        # Grid of recent analyses loaded from localStorage
+  MetricCard.tsx         # Individual metric with value, rating, and mini bar
+  ScoreCard.tsx          # Radial chart score card
+  UrlInput.tsx           # URL input with normalization and validation
+  ui/                    # shadcn/ui primitives
+hooks/
+  useAnalyze.ts          # useMutation wrapper; exposes analyze + loadCached
+lib/
+  metrics.ts             # Thresholds, getRating(), and color helpers
+  pagespeed.ts           # PageSpeed Insights API client
+store/
+  useHistoryStore.ts     # Zustand store with localStorage persistence
+types/
+  metrics.ts             # Shared TypeScript types
+```
 
-## Deploy on Vercel
+## License
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+MIT
