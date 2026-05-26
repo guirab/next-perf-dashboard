@@ -2,8 +2,6 @@
 
 A real-time web performance analyzer powered by Google PageSpeed Insights. Paste any URL and get a full breakdown of Core Web Vitals, performance score, and analysis history — in seconds.
 
-**Live demo:** https://next-perf-dashboard.vercel.app
-
 ---
 
 ## Features
