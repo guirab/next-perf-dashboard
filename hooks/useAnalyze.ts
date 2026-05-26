@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import { useHistoryStore } from '@/store/useHistoryStore'
 import type { AnalysisResult, Strategy } from '@/types/metrics'
@@ -17,26 +18,28 @@ async function fetchAnalysis({ url, strategy }: AnalyzeParams): Promise<Analysis
   })
   if (!res.ok) {
     const data = await res.json().catch(() => ({}))
-    throw new Error(data.error ?? `Request failed with status ${res.status}`)
+    throw new Error(data.error || `Request failed with status ${res.status}`)
   }
   return res.json()
 }
 
 export function useAnalyze() {
+  const [result, setResult] = useState<AnalysisResult | null>(null)
   const addAnalysis = useHistoryStore((s) => s.addAnalysis)
 
   const mutation = useMutation({
     mutationFn: fetchAnalysis,
     onSuccess: (data) => {
       addAnalysis(data)
+      setResult(data)
     },
   })
 
   return {
     analyze: mutation.mutate,
-    result: mutation.data,
+    loadCached: (entry: AnalysisResult) => setResult(entry),
+    result,
     isLoading: mutation.isPending,
     error: mutation.error,
-    reset: mutation.reset,
   }
 }

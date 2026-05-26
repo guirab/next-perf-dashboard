@@ -34,6 +34,7 @@ export async function runPageSpeed(url: string, strategy: Strategy): Promise<Ana
 
   const res = await fetch(`${PAGESPEED_API}?${params}`, {
     headers: { 'User-Agent': 'next-perf-dashboard/1.0' },
+    signal: AbortSignal.timeout(30000),
   })
   if (!res.ok) {
     const body = await res.text().catch(() => '')
@@ -77,7 +78,8 @@ export async function runPageSpeed(url: string, strategy: Strategy): Promise<Ana
     metrics[metricKey] = { value, displayValue, rating }
   }
 
-  // FID fallback — older API versions may not have max-potential-fid
+  // FID was deprecated by Google in March 2024 and replaced by INP.
+  // The max-potential-fid audit may be absent from newer API responses.
   if (!metrics.fid) {
     metrics.fid = { value: 0, displayValue: 'N/A', rating: 'good' }
   }

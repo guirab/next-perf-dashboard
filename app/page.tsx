@@ -10,26 +10,20 @@ import { HistoryList } from '@/components/HistoryList'
 import { AnalysisProgress } from '@/components/AnalysisProgress'
 import { Separator } from '@/components/ui/separator'
 import { useAnalyze } from '@/hooks/useAnalyze'
-import type { AnalysisResult, Strategy } from '@/types/metrics'
+import type { Strategy } from '@/types/metrics'
 import type { MetricKey } from '@/lib/metrics'
 import type { HistoryEntry } from '@/store/useHistoryStore'
 
 const METRIC_ORDER: MetricKey[] = ['lcp', 'fcp', 'ttfb', 'cls', 'inp', 'fid']
+const CACHE_TTL_MS = 10 * 60 * 1000
 
 export default function Home() {
   const [strategy, setStrategy] = useState<Strategy>('mobile')
-  const [displayed, setDisplayed] = useState<AnalysisResult | null>(null)
-  const { analyze, result, isLoading, error } = useAnalyze()
+  const { analyze, loadCached, result, isLoading, error } = useAnalyze()
 
   useEffect(() => {
-    if (result) setDisplayed(result)
-  }, [result])
-
-  useEffect(() => {
-    if (error) toast.error(error.message ?? 'Analysis failed. Please try again.')
+    if (error) toast.error(error.message || 'Analysis failed. Please try again.')
   }, [error])
-
-  const CACHE_TTL_MS = 10 * 60 * 1000 // 10 minutes
 
   function handleHistorySelect(entry: HistoryEntry) {
     const isStale = Date.now() - entry.timestamp > CACHE_TTL_MS
@@ -38,7 +32,7 @@ export default function Home() {
       analyze({ url: entry.url, strategy: entry.strategy })
       toast.info('Cache expired — re-analyzing…')
     } else {
-      setDisplayed(entry)
+      loadCached(entry)
       setStrategy(entry.strategy)
       const age = Math.round((Date.now() - entry.timestamp) / 1000)
       toast.success(`Loaded from cache (${age}s ago)`)
@@ -47,7 +41,6 @@ export default function Home() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      {/* Header */}
       <header className="border-b bg-background/80 backdrop-blur-sm sticky top-0 z-10">
         <div className="max-w-6xl mx-auto px-4 md:px-8 h-14 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
@@ -63,7 +56,6 @@ export default function Home() {
       </header>
 
       <main className="flex-1 max-w-6xl mx-auto w-full px-4 md:px-8 py-8 space-y-8">
-        {/* Search bar */}
         <div className="space-y-3">
           <div className="flex flex-col sm:flex-row gap-2">
             <div className="flex-1 min-w-0">
@@ -76,8 +68,7 @@ export default function Home() {
           {isLoading && <AnalysisProgress />}
         </div>
 
-        {/* Results */}
-        {(displayed || isLoading) && (
+        {(result || isLoading) && (
           <section className="space-y-6">
             <div className="flex items-center gap-3">
               <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Results</h2>
@@ -85,9 +76,9 @@ export default function Home() {
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-[220px_1fr] gap-6">
               <ScoreCard
-                score={displayed?.score ?? 0}
-                strategy={displayed?.strategy ?? strategy}
-                url={displayed?.url ?? ''}
+                score={result?.score ?? 0}
+                strategy={result?.strategy ?? strategy}
+                url={result?.url ?? ''}
                 isLoading={isLoading}
               />
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -95,7 +86,7 @@ export default function Home() {
                   <MetricCard
                     key={key}
                     metricKey={key}
-                    metric={displayed?.metrics[key]}
+                    metric={result?.metrics[key]}
                     isLoading={isLoading}
                   />
                 ))}
@@ -104,7 +95,6 @@ export default function Home() {
           </section>
         )}
 
-        {/* History */}
         <HistoryList onSelect={handleHistorySelect} />
       </main>
 
