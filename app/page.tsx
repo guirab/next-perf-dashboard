@@ -1,65 +1,118 @@
-import Image from "next/image";
+'use client'
+
+import { useState, useEffect } from 'react'
+import { toast } from 'sonner'
+import { UrlInput } from '@/components/UrlInput'
+import { CompareToggle } from '@/components/CompareToggle'
+import { ScoreCard } from '@/components/ScoreCard'
+import { MetricCard } from '@/components/MetricCard'
+import { HistoryList } from '@/components/HistoryList'
+import { AnalysisProgress } from '@/components/AnalysisProgress'
+import { Separator } from '@/components/ui/separator'
+import { useAnalyze } from '@/hooks/useAnalyze'
+import type { AnalysisResult, Strategy } from '@/types/metrics'
+import type { MetricKey } from '@/lib/metrics'
+import type { HistoryEntry } from '@/store/useHistoryStore'
+
+const METRIC_ORDER: MetricKey[] = ['lcp', 'fcp', 'ttfb', 'cls', 'inp', 'fid']
 
 export default function Home() {
+  const [strategy, setStrategy] = useState<Strategy>('mobile')
+  const [displayed, setDisplayed] = useState<AnalysisResult | null>(null)
+  const { analyze, result, isLoading, error } = useAnalyze()
+
+  useEffect(() => {
+    if (result) setDisplayed(result)
+  }, [result])
+
+  useEffect(() => {
+    if (error) toast.error(error.message ?? 'Analysis failed. Please try again.')
+  }, [error])
+
+  const CACHE_TTL_MS = 10 * 60 * 1000 // 10 minutes
+
+  function handleHistorySelect(entry: HistoryEntry) {
+    const isStale = Date.now() - entry.timestamp > CACHE_TTL_MS
+    if (isStale) {
+      setStrategy(entry.strategy)
+      analyze({ url: entry.url, strategy: entry.strategy })
+      toast.info('Cache expired — re-analyzing…')
+    } else {
+      setDisplayed(entry)
+      setStrategy(entry.strategy)
+      const age = Math.round((Date.now() - entry.timestamp) / 1000)
+      toast.success(`Loaded from cache (${age}s ago)`)
+    }
+  }
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <div className="min-h-screen flex flex-col">
+      {/* Header */}
+      <header className="border-b bg-background/80 backdrop-blur-sm sticky top-0 z-10">
+        <div className="max-w-6xl mx-auto px-4 md:px-8 h-14 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center">
+              <svg className="w-4 h-4 text-primary-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>
+                <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+              </svg>
+            </div>
+            <span className="font-semibold text-base tracking-tight">Perf Dashboard</span>
+          </div>
+          <span className="text-xs text-muted-foreground hidden sm:block">Powered by Google PageSpeed Insights</span>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+      </header>
+
+      <main className="flex-1 max-w-6xl mx-auto w-full px-4 md:px-8 py-8 space-y-8">
+        {/* Search bar */}
+        <div className="space-y-3">
+          <div className="flex flex-col sm:flex-row gap-2">
+            <div className="flex-1 min-w-0">
+              <UrlInput onAnalyze={(url) => analyze({ url, strategy })} isLoading={isLoading} />
+            </div>
+            <div className="w-fit">
+              <CompareToggle strategy={strategy} onChange={setStrategy} disabled={isLoading} />
+            </div>
+          </div>
+          {isLoading && <AnalysisProgress />}
         </div>
+
+        {/* Results */}
+        {(displayed || isLoading) && (
+          <section className="space-y-6">
+            <div className="flex items-center gap-3">
+              <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Results</h2>
+              <Separator className="flex-1" />
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-[220px_1fr] gap-6">
+              <ScoreCard
+                score={displayed?.score ?? 0}
+                strategy={displayed?.strategy ?? strategy}
+                url={displayed?.url ?? ''}
+                isLoading={isLoading}
+              />
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {METRIC_ORDER.map((key) => (
+                  <MetricCard
+                    key={key}
+                    metricKey={key}
+                    metric={displayed?.metrics[key]}
+                    isLoading={isLoading}
+                  />
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* History */}
+        <HistoryList onSelect={handleHistorySelect} />
       </main>
+
+      <footer className="border-t py-4">
+        <p className="text-center text-xs text-muted-foreground">
+          Analysis data provided by Google PageSpeed Insights API
+        </p>
+      </footer>
     </div>
-  );
+  )
 }
