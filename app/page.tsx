@@ -7,6 +7,7 @@ import { CompareToggle } from '@/components/CompareToggle'
 import { ScoreCard } from '@/components/ScoreCard'
 import { MetricCard } from '@/components/MetricCard'
 import { HistoryList } from '@/components/HistoryList'
+import { TrendsChart } from '@/components/TrendsChart'
 import { AnalysisProgress } from '@/components/AnalysisProgress'
 import { Separator } from '@/components/ui/separator'
 import { useAnalyze } from '@/hooks/useAnalyze'
@@ -92,6 +93,18 @@ export default function Home() {
                 ))}
               </div>
             </div>
+          </section>
+        )}
+
+        {result && (
+          <section className="space-y-6">
+            <div className="flex items-center gap-3">
+              <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+                Performance Trends
+              </h2>
+              <Separator className="flex-1" />
+            </div>
+            <TrendsChart url={result.url} defaultStrategy={result.strategy} />
           </section>
         )}
 

@@ -14,6 +14,7 @@ A real-time web performance analyzer powered by Google PageSpeed Insights. Paste
 - **Analysis history** — last 20 results persisted in localStorage via Zustand
 - **Smart cache** — results are reused for 10 minutes; older entries are re-fetched automatically
 - **Error handling** — friendly messages for rate limits, crawler blocks, and timeouts
+- **Performance trends** — visualize how a URL's Core Web Vitals evolve over multiple analyses with an interactive line chart (toggle mobile/desktop)
 
 ## Known Limitations
 
